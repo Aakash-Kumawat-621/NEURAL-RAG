@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const formatted = runs.map((run) => ({
+    const formatted = runs.map((run: any) => ({
       id: run.id,
       threadId: run.threadId,
       query: run.query,
