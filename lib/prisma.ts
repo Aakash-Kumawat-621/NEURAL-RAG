@@ -9,8 +9,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
+  const dbUrl = process.env.DATABASE_URL ?? "";
+  if (dbUrl.startsWith("postgresql://") || dbUrl.startsWith("postgres://")) {
+    return new PrismaClient();
+  }
+  
+  // Fallback to SQLite adapter for local dev if URL is not a postgres string
   const adapter = new PrismaBetterSqlite3({
-    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+    url: dbUrl || "file:./prisma/dev.db",
   });
   return new PrismaClient({ adapter });
 }
