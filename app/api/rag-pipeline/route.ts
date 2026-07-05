@@ -7,7 +7,6 @@ import { errorResponse, ValidationError } from "@/lib/errors";
 import { consumeToken, getRemainingTokens } from "@/lib/rate-limit";
 import { RateLimitError } from "@/lib/errors";
 import { DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, DEFAULT_TOP_K } from "@/lib/constants";
-import { v4 as uuidv4 } from "crypto";
 
 export async function POST(request: NextRequest) {
   try {

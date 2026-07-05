@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -12,21 +11,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const dbUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
+  // Use a dummy PostgreSQL connection string as a fallback for build-time static evaluation
+  const dbUrl = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/postgres";
 
-  if (dbUrl.startsWith("postgresql://") || dbUrl.startsWith("postgres://")) {
-    const pool = globalForPrisma.pgPool ?? new Pool({ connectionString: dbUrl });
-    if (process.env.NODE_ENV !== "production") {
-      globalForPrisma.pgPool = pool;
-    }
-    const adapter = new PrismaPg(pool);
-    return new PrismaClient({ adapter });
+  const pool = globalForPrisma.pgPool ?? new Pool({ connectionString: dbUrl });
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.pgPool = pool;
   }
-
-  // Fallback to SQLite adapter for local dev if URL is not a postgres string
-  const adapter = new PrismaBetterSqlite3({
-    url: dbUrl,
-  });
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
 
