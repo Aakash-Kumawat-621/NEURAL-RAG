@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  name           String?
+  hashedPassword String?       // Nullable for OAuth-only users
+  image          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  documents      Document[]
+  pipelineRuns   PipelineRun[]
+  accounts       Account[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Document {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename     String
+  fileType     String        // "pdf" | "txt" | "md" | "docx"
+  rawText      String        // Full extracted text
+  pineconeNs   String        // Namespace used in Pinecone (userId_documentId)
+  chunkCount   Int           @default(0)
+  createdAt    DateTime      @default(now())
+  pipelineRuns PipelineRun[]
+}
+
+model PipelineRun {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId      String
+  document        Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  threadId        String?   // LangGraph thread ID for HITL resume
+  query           String
+  params          String    // JSON string: { chunkSize, chunkOverlap, topK }
+  retrievedChunks String?   // JSON array of retrieved chunks + scores
+  answer          String?
+  metrics         String?   // JSON: { embeddingMs, retrievalMs, generationMs, totalTokens }
+  status          String    @default("pending") // pending | ingesting | retrieving | generating | completed | failed
+  currentStep     String    @default("pending") // Current pipeline step for HITL
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+}
